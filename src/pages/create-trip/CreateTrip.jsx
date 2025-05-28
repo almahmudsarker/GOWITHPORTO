@@ -6,10 +6,14 @@ import {
   SelectTravelList,
 } from "@/constants/options";
 import { generateAIContent } from "@/service/AiModal";
+import { useGoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 import { useEffect, useState } from "react";
+import { FcGoogle } from "react-icons/fc";
 
 const CreateTrip = () => {
   const [formData, setFormData] = useState({});
+  const [modal, setModal] = useState(false);
 
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
@@ -19,7 +23,22 @@ const CreateTrip = () => {
     handleInputChange("location", "Porto");
   }, []);
 
+  const login = useGoogleLogin({
+    onSuccess: (credentialResponse) => {
+      console.log("Login Successful:", credentialResponse);
+      GetUserProfile(credentialResponse);
+    },
+    onError: (error) => {
+      console.error("Login Failed:", error);
+    },
+  });
+
   const OnGenerateTrip = async () => {
+    const user = localStorage.getItem("user");
+    if (!user) {
+      setModal(true);
+      return;
+    }
     if (
       !formData?.noOfDays ||
       parseInt(formData.noOfDays) <= 0 ||
@@ -49,6 +68,45 @@ const CreateTrip = () => {
     } catch (error) {
       console.error("❌ Error generating trip:", error);
     }
+  };
+
+  //   axios
+  //     .get(
+  //       `https://www.googleapis.com/oauth2/v1/userinfo?acess_token=${tokenInfo?.access_token}`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${tokenInfo?.access_token}`,
+  //           Accept: "Application/json",
+  //         },
+  //       }
+  //     )
+  //     .then((response) => {
+  //       console.log("User Profile:", response.data);
+  //       localStorage.setItem("user", JSON.stringify(response.data));
+  //       setModal(false);
+  //       OnGenerateTrip();
+  //     });
+  // };
+  const GetUserProfile = (tokenInfo) => {
+    axios
+      .get(
+        `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokenInfo?.access_token}`,
+            Accept: "application/json",
+          },
+        }
+      )
+      .then((response) => {
+        console.log("User Profile:", response.data);
+        localStorage.setItem("user", JSON.stringify(response.data));
+        setModal(false);
+        OnGenerateTrip();
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+      });
   };
 
   return (
@@ -130,6 +188,20 @@ const CreateTrip = () => {
       <div className="my-10 flex justify-center">
         <Button onClick={OnGenerateTrip}>Generate Plan</Button>
       </div>
+      {modal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-xl font-bold mb-4">Please Login</h2>
+            <p className="mb-4">
+              You need to be logged in to generate a trip plan.
+            </p>
+            <Button onClick={login}>
+              <FcGoogle className="h-7 w-7" />
+              Login with Google
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
