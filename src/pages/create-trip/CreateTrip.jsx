@@ -6,15 +6,21 @@ import {
   SelectTravelList,
 } from "@/constants/options";
 import { generateAIContent } from "@/service/AiModal";
+import { db } from "@/service/firebaseConfig";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { doc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { FcGoogle } from "react-icons/fc";
+import { useNavigate } from "react-router-dom";
 
 const CreateTrip = () => {
   const [formData, setFormData] = useState({});
   const [modal, setModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
+  // Function to handle input changes
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
@@ -23,6 +29,7 @@ const CreateTrip = () => {
     handleInputChange("location", "Porto");
   }, []);
 
+  // Google OAuth login setup
   const login = useGoogleLogin({
     onSuccess: (credentialResponse) => {
       console.log("Login Successful:", credentialResponse);
@@ -33,6 +40,7 @@ const CreateTrip = () => {
     },
   });
 
+  // Function to handle generating the trip
   const OnGenerateTrip = async () => {
     const user = localStorage.getItem("user");
     if (!user) {
@@ -50,6 +58,8 @@ const CreateTrip = () => {
       );
       return;
     }
+    setLoading(true);
+    console.log("📝 Generating trip with data:", formData);
 
     const FINAL_PROMPT = AI_PROMPT.replace("{location}", formData?.location)
       .replace(/{totalDays}/g, formData?.noOfDays)
@@ -65,28 +75,18 @@ const CreateTrip = () => {
       const responseText = await generateAIContent(FINAL_PROMPT);
       console.log("✅ AI Response:", responseText);
       // TODO: Handle JSON parsing or rendering
+      setLoading(false);
+      if (responseText) {
+        await SaveAiTrip(responseText);
+      } else {
+        alert("No response received from AI. Please try again.");
+      }
     } catch (error) {
       console.error("❌ Error generating trip:", error);
     }
   };
 
-  //   axios
-  //     .get(
-  //       `https://www.googleapis.com/oauth2/v1/userinfo?acess_token=${tokenInfo?.access_token}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${tokenInfo?.access_token}`,
-  //           Accept: "Application/json",
-  //         },
-  //       }
-  //     )
-  //     .then((response) => {
-  //       console.log("User Profile:", response.data);
-  //       localStorage.setItem("user", JSON.stringify(response.data));
-  //       setModal(false);
-  //       OnGenerateTrip();
-  //     });
-  // };
+  // Function to fetch user profile from Google
   const GetUserProfile = (tokenInfo) => {
     axios
       .get(
@@ -107,6 +107,44 @@ const CreateTrip = () => {
       .catch((error) => {
         console.error("Error fetching user profile:", error);
       });
+  };
+
+  // Firebase imports
+  // const SaveAiTrip = async (TripData) => {
+  //   setLoading(true);
+  //   const user = JSON.parse(localStorage.getItem("user"));
+  //   const docId = Date.now().toString();
+  //   // Clean up AI response if it contains markdown formatting
+  //   const cleanedTripData = TripData.replace(/```json/g, "")
+  //     .replace(/```/g, "")
+  //     .trim();
+  //   console.log("📝 Saving trip data:", cleanedTripData);
+  //   await setDoc(doc(db, "AITrips", docId), {
+  //     userChoice: formData,
+  //     tripData: JSON.parse(TripData),
+  //     userEmail: user?.email,
+  //     id: docId,
+  //   });
+  //   navigate("/view-trip/" + docId);
+  // };
+  const SaveAiTrip = async (TripData) => {
+    setLoading(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const docId = Date.now().toString();
+
+    // Clean up AI response if it contains markdown formatting
+    const cleanedTripData = TripData.replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    await setDoc(doc(db, "AITrips", docId), {
+      userChoice: formData,
+      tripData: JSON.parse(cleanedTripData),
+      userEmail: user?.email,
+      id: docId,
+    });
+
+    navigate("/view-trip/" + docId);
   };
 
   return (
@@ -186,7 +224,9 @@ const CreateTrip = () => {
       </div>
 
       <div className="my-10 flex justify-center">
-        <Button onClick={OnGenerateTrip}>Generate Plan</Button>
+        <Button disabled={loading} onClick={OnGenerateTrip}>
+          {loading ? "Generating Plan..." : "Generate Plan"}
+        </Button>
       </div>
       {modal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">

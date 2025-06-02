@@ -16,6 +16,7 @@
 // import Review from "../pages/dashboard/Review";
 // import PrivateRoute from "./PrivateRoute";
 import CreateTrip from "@/pages/create-trip/CreateTrip.jsx";
+import TripDetails from "@/pages/trip-details/[tripId]/index.jsx";
 import { createBrowserRouter } from "react-router-dom";
 import ErrorPage from "../error-page.jsx";
 import Main from "../layouts/Main";
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
       {
         path: "/create-trip",
         element: <CreateTrip />,
+      },
+      {
+        path: "/view-trip/:tripId",
+        element: <TripDetails />,
       },
       // {
       //   path: "/service/:id",
