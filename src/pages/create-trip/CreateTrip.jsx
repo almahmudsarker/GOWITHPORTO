@@ -10,12 +10,13 @@ import { db } from "@/service/firebaseConfig";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { doc, setDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
 
 const CreateTrip = () => {
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({ location: "Porto" });
+
   const [modal, setModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -24,10 +25,6 @@ const CreateTrip = () => {
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
   };
-
-  useEffect(() => {
-    handleInputChange("location", "Porto");
-  }, []);
 
   // Google OAuth login setup
   const login = useGoogleLogin({
@@ -83,6 +80,8 @@ const CreateTrip = () => {
       }
     } catch (error) {
       console.error("❌ Error generating trip:", error);
+      setLoading(false);
+      alert("An error occurred while generating the trip. Please try again.");
     }
   };
 
@@ -137,14 +136,34 @@ const CreateTrip = () => {
       .replace(/```/g, "")
       .trim();
 
-    await setDoc(doc(db, "AITrips", docId), {
-      userChoice: formData,
-      tripData: JSON.parse(cleanedTripData),
-      userEmail: user?.email,
-      id: docId,
-    });
+    let parsedData;
+    try {
+      parsedData = JSON.parse(cleanedTripData);
+    } catch (error) {
+      console.error("❌ Failed to parse AI response as JSON:", error);
+      alert(
+        "Oops! The generated plan has an unexpected format. Please try again."
+      );
+      setLoading(false);
+      return;
+    }
 
-    navigate("/view-trip/" + docId);
+    try {
+      await setDoc(doc(db, "AITrips", docId), {
+        userChoice: formData,
+        tripData: parsedData,
+        userEmail: user?.email,
+        id: docId,
+      });
+      navigate("/view-trip/" + docId);
+    } catch (error) {
+      console.error("❌ Error saving trip to Firestore:", error);
+      alert(
+        "Something went wrong while saving your plan. Please try again later."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

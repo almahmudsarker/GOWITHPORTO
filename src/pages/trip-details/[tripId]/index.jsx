@@ -1,7 +1,23 @@
+import { db } from "@/service/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const TripDetails = () => {
   const { tripId } = useParams();
+  const [trip, setTrip] = useState(null);
+  useEffect(() => {
+    tripId && GetTripData();
+  }, [tripId]);
+  const GetTripData = async () => {
+    const docRef = doc(db, "AITrips", tripId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      setTrip(docSnap.data());
+    } else {
+      console.log("No such document!");
+    }
+  };
   return (
     <>
       <div
@@ -25,32 +41,63 @@ const TripDetails = () => {
 
               <div className="flex flex-wrap justify-between gap-3 p-4">
                 <p className="text-[#101518] tracking-light text-[32px] font-bold leading-tight min-w-72">
-                  Your Porto Adventure Awaits: Trip #{tripId}
+                  Your Porto Adventure Awaits: {trip?.tripData?.destination} for{" "}
+                  {trip?.userChoice?.noOfDays} days
                 </p>
               </div>
 
+              {/* hotels */}
               <Section title="Recommended Hotels">
-                {hotelCards.map((hotel, index) => (
-                  <Card
-                    key={index}
-                    image={hotel.image}
-                    title={hotel.title}
-                    subtitle={hotel.subtitle}
-                  />
-                ))}
+                {trip?.tripData?.hotels?.length > 0 ? (
+                  trip?.tripData?.hotels?.map((hotel, index) => (
+                    <Card
+                      key={index}
+                      image="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bHV4dXJ5JTIwaG90ZWx8ZW58MHx8MHx8fDA%3D"
+                      title={hotel.name}
+                      subtitle={hotel.description}
+                    />
+                  ))
+                ) : (
+                  <p>No hotel data available.</p>
+                )}
               </Section>
 
-              <Section title="Itinerary Day 1">
-                {itineraryDay1.map((place, index) => (
-                  <Card
-                    key={index}
-                    image={place.image}
-                    title={place.title}
-                    subtitle={place.subtitle}
-                  />
-                ))}
-              </Section>
+              {/* Itinerary */}
 
+              {trip?.tripData?.itinerary ? (
+                Object.entries(trip.tripData.itinerary).map(
+                  ([dayKey, places]) => (
+                    <Section
+                      key={dayKey}
+                      title={`Itinerary ${dayKey.replace("day", "Day ")}`}
+                    >
+                      {places && places.length > 0 ? (
+                        places.map((place, index) => (
+                          <Card
+                            key={index}
+                            image="https://images.unsplash.com/photo-1591028544607-57e17c55e8c9?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHBvcnRvfGVufDB8fDB8fHww"
+                            title={place.name}
+                            subtitle={place.description}
+                            bestTime={place.bestTime}
+                            travelTime={place.travelTime}
+                            rating={place.rating}
+                          />
+                        ))
+                      ) : (
+                        <p className="text-gray-500">
+                          No places planned for this day.
+                        </p>
+                      )}
+                    </Section>
+                  )
+                )
+              ) : (
+                <Section title="Itinerary">
+                  <p className="text-gray-500">No itinerary data available.</p>
+                </Section>
+              )}
+
+              {/* Food Suggestions */}
               <Section title="Food Suggestions" isVertical>
                 {foodSuggestions.map((food, index) => (
                   <FoodSuggestion key={index} {...food} />
@@ -188,8 +235,9 @@ const TripDetails = () => {
             </div>
 
             <p className="text-[#101518] text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">
-              Based on your preferences for a budget-friendly solo trip in Porto
-              lasting 1 day...
+              Based on your preferences for a {trip?.userChoice?.budget}{" "}
+              {trip?.userChoice?.people?.type} trip in Porto lasting{" "}
+              {trip?.userChoice?.noOfDays} day...
             </p>
           </div>
         </div>
@@ -215,7 +263,7 @@ const Section = ({ title, children, isVertical = false }) => (
   </>
 );
 
-const Card = ({ image, title, subtitle }) => (
+const Card = ({ image, title, subtitle, bestTime, travelTime, rating }) => (
   <div className="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-40">
     <div
       className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex flex-col"
@@ -228,6 +276,21 @@ const Card = ({ image, title, subtitle }) => (
       <p className="text-[#5c788a] text-sm font-normal leading-normal">
         {subtitle}
       </p>
+      {bestTime && (
+        <p className="text-[#5c788a] text-sm font-normal leading-normal">
+          {`Best Time to Visit: ${bestTime}`}
+        </p>
+      )}
+      {travelTime && (
+        <p className="text-[#5c788a] text-sm font-normal leading-normal">
+          {`Travel Time: ${travelTime}`}
+        </p>
+      )}
+      {rating && (
+        <p className="text-[#5c788a] text-sm font-normal leading-normal">
+          {`Rating: ${rating}`}
+        </p>
+      )}
     </div>
   </div>
 );
@@ -255,48 +318,6 @@ const FoodSuggestion = ({ title, description, image }) => (
     </div>
   </div>
 );
-
-const hotelCards = [
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCQhhQHifPH8I64wZ4_wzK8tyTxMDLxgq8GG7WRkes8MQJb3iBfW81mVH0VWDjR5ukRQW28qXZ9dZ6gMcUq-BwVsGciS-VqOwlFPxq0ywHrg-jbwzooX5NDTwb064Jco9_raWsU7T6OnowUaxxG7kro-m73LVRnfw6v6zERhJ0dbTgjI5Myh4UxnuSC_6XPXms67VxQxGeb102fY0z5AH8S4I_DczGKDdK-yXKigOBlrYTXELvBtQaabCMHwlc5CFHJIKqRp8_nDks",
-    title: "Gallery Hostel Porto",
-    subtitle: "Centrally located with private/dorm rooms",
-  },
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuADBmU6fMDjYrJgpXSZANTx2prfKLRk-Rg1NV4njtQMU3z5OUzWB61pN7eumKxQ2JkYjfQJ3Xk8dcfrciIVXWzjt9PNxBBE8UVkz4P1JTjkOl4r4g7BoGREifxEu7O-NtL8SzD0ZCUL4aPLwNgtHKOivTkExNYSMxIsZ4MeD-cjD_i8HUo220YTOv9T9XmZfHrYotRfrpjCiTV2647IIIT8sZPhmJh3su_qaWp5bJ7byF0_GpwrxshrXzTvF7hMan18dmVAWoW2DRQ",
-    title: "Home Porto Ribeira",
-    subtitle: "Budget guesthouse near Douro River",
-  },
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDqebSVOtc_8V_azESAxnSjCdoJO-ZX3TVdluvaeUwbHf67mfdVCgxtFX5Wkh5wGrI_vZZMDTMvQQJcB3aNgAj-5QO4Xbei_72l4SKu7tQXsWmdMjmMiPtRZ5VOYJKLuwhSAoHwY-SYGE2FBg4zmtLwSHT9AQ3JkWzY2hWdOU6Lyjrgjjqnzn2I73hhzoTXfAEdOfSBDwjGsPZZIIq32Goc3EUFJX34Z_6hikHYx6mK1VPbHpf8ujSSUFNamm8xTfDDESr-zPOIdQw",
-    title: "Selina Porto",
-    subtitle: "Social hostel with a lively vibe",
-  },
-];
-
-const itineraryDay1 = [
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDdjfANWzwZCqTT-uC5Wf9C8Ju2d29QDsE-B84pyQrEjPeeNTUWDkRP_rXZJdNy9fzx8snSqqTjMDdaJ7NcdT1x2rI1sUIzOtJjx5GkT7hmRwuIEzX2WkKW0hdlL_OcGi0pcaSGK10GwZbOw_o3_MKKHJjNQEc6flankd8GD7oajmm-A3BZjwG2N-KW9gYO7YoRZYjipfdISDt-InKnyb12EeTKo7BqLPkP2eySR7n3ZRvZLnMQq4uG7lT2M3EqTAdtr3W_r5tjrkc",
-    title: "Livraria Lello",
-    subtitle: "Morning: Stunning bookstore inspiring Harry Potter (€5 ticket)",
-  },
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCQScYbjhFcK9CQ9dCP4UWT2iHOd-gLDPivqJDqBa5E0tpXc9M_sFaCdBx9OoaSX4ON2fSKzWG9T31vF71c6fVZd_4mQV5Rv-BJFWeElksTq1W83dOJSk0T_mO2havFJWj9qTmIJMbs_R23Xje0DUsdAESQmaI_SRl0fN4_1pFdElEMnEVBBLX97ioZQdI-XTaWqjn_SCG2KZ3k8HB-biOEsqllu5MWFJk45vMRKqHjAhSuHowvxzGvUzsGMW-9e6FPW0sjINfMdJw",
-    title: "Clérigos Church and Tower",
-    subtitle: "Afternoon: Baroque church with city views (€6 ticket)",
-  },
-  {
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDjSLbjpauoBm_dQ4QgdprsLJfiMs5z2VILD1FFlvDpOVltVwPks9Cpor9GPmS3vrkt5BVsFczrgCpTZxyA96YpyhiPU2VROrQ9VY0YrwSx4wQYWQzYBKQYyuSMMsAbtvzSS7vy3nPrHmqL9doL-n-_Q3wFtSS1vk_cYEt8cCCIGskNq1hMOjYa-Glty9TQ5WuFyqPpW3vSoQFjZVJvXyND_iw31Ofx7MfzxGLHV2AbZDd3ZZBp3V3UbJSbWkmBXffcZ4S8XTWx5ps",
-    title: "Ribeira District",
-    subtitle: "Evening: Historic waterfront with restaurants (Free)",
-  },
-];
 
 const foodSuggestions = [
   {
