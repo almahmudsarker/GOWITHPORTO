@@ -1,7 +1,7 @@
 import { db } from "@/service/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const TripDetails = () => {
   const { tripId } = useParams();
@@ -50,12 +50,24 @@ const TripDetails = () => {
               <Section title="Recommended Hotels">
                 {trip?.tripData?.hotels?.length > 0 ? (
                   trip?.tripData?.hotels?.map((hotel, index) => (
-                    <Card
-                      key={index}
-                      image="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bHV4dXJ5JTIwaG90ZWx8ZW58MHx8MHx8fDA%3D"
-                      title={hotel.name}
-                      subtitle={hotel.description}
-                    />
+                    <Link
+                      to={
+                        "https://www.google.com/maps/search/?api=1&query=" +
+                        trip?.tripData?.hotels[index].address
+                      }
+                      target="_blank"
+                    >
+                      <Card
+                        key={index}
+                        image={`${
+                          hotel?.imageUrl
+                            ? "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bHV4dXJ5JTIwaG90ZWx8ZW58MHx8MHx8fDA%3D"
+                            : hotel?.imageUrl
+                        }`}
+                        title={hotel.name}
+                        subtitle={hotel.description}
+                      />
+                    </Link>
                   ))
                 ) : (
                   <p>No hotel data available.</p>
@@ -73,15 +85,25 @@ const TripDetails = () => {
                     >
                       {places && places.length > 0 ? (
                         places.map((place, index) => (
-                          <Card
-                            key={index}
-                            image="https://images.unsplash.com/photo-1591028544607-57e17c55e8c9?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHBvcnRvfGVufDB8fDB8fHww"
-                            title={place.name}
-                            subtitle={place.description}
-                            bestTime={place.bestTime}
-                            travelTime={place.travelTime}
-                            rating={place.rating}
-                          />
+                          <Link
+                            to={
+                              "https://www.google.com/maps/search/?api=1&query=" +
+                              place.geoCoordinates?.latitude +
+                              "," +
+                              place.geoCoordinates?.longitude
+                            }
+                            target="_blank"
+                          >
+                            <Card
+                              key={index}
+                              image="https://images.unsplash.com/photo-1591028544607-57e17c55e8c9?w=1000&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHBvcnRvfGVufDB8fDB8fHww"
+                              title={place.name}
+                              subtitle={place.description}
+                              bestTime={place.bestTime}
+                              travelTime={place.travelTime}
+                              rating={place.rating}
+                            />
+                          </Link>
                         ))
                       ) : (
                         <p className="text-gray-500">
@@ -100,7 +122,15 @@ const TripDetails = () => {
               {/* Food Suggestions */}
               <Section title="Food Suggestions" isVertical>
                 {foodSuggestions.map((food, index) => (
-                  <FoodSuggestion key={index} {...food} />
+                  <Link
+                    to={
+                      "https://www.google.com/maps/search/?api=1&query=" +
+                      food.address
+                    }
+                    target="_blank"
+                  >
+                    <FoodSuggestion key={index} {...food} />
+                  </Link>
                 ))}
               </Section>
             </div>
@@ -174,9 +204,16 @@ const TripDetails = () => {
                       rentals. €15 for a half-day.
                     </p>
                   </div>
-                  <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 flex-row-reverse bg-[#1B3936] text-white text-sm font-medium leading-normal w-fit">
-                    <span className="truncate">Learn More</span>
-                  </button>
+                  <Link
+                    to={
+                      "https://www.google.com/maps/place/Porto+Bike+Rental/@41.1427225,-8.6144188,445m/data=!3m2!1e3!4b1!4m6!3m5!1s0xd2465a4b64d4917:0xf1bacac8b60ee221!8m2!3d41.1427225!4d-8.6144188!16s%2Fg%2F11s9y_3b9f?hl=en&entry=ttu&g_ep=EgoyMDI1MDcwNy4wIKXMDSoASAFQAw%3D%3D"
+                    }
+                    target="_blank"
+                  >
+                    <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 flex-row-reverse bg-[#1B3936] text-white text-sm font-medium leading-normal w-fit">
+                      <span className="truncate">Learn More</span>
+                    </button>
+                  </Link>
                 </div>
                 <div
                   className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-xl flex-1"
@@ -229,6 +266,16 @@ const TripDetails = () => {
                         {item.desc}
                       </p>
                     </div>
+                    <Link
+                      to={
+                        "https://www.google.com/maps/place/M%26M+souvenirs/@41.1452198,-8.6119503,28m/data=!3m1!1e3!4m15!1m8!3m7!1s0xd2464e3ea6279db:0x66305a127c97b977!2sR.+Trindade+Coelho+26,+4000-069+Porto!3b1!8m2!3d41.1452322!4d-8.6118883!16s%2Fg%2F11nnktrr22!3m5!1s0xd2465f617463ded:0x138a210e8f56c87e!8m2!3d41.1452355!4d-8.6118789!16s%2Fg%2F11vcql7xfw?entry=ttu&g_ep=EgoyMDI1MDcwNy4wIKXMDSoASAFQAw%3D%3D"
+                      }
+                      target="_blank"
+                    >
+                      <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-8 px-4 flex-row-reverse bg-[#1B3936] text-white text-sm font-medium leading-normal w-fit">
+                        <span className="truncate">Buy Now</span>
+                      </button>
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -325,14 +372,16 @@ const foodSuggestions = [
     description:
       "A classic Porto sandwich with layers of meat, sausage, and cheese, covered in a rich tomato and beer sauce.",
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCdlN9mRp32XF4g5Z9PVVjOB0E_zD4WosBnmnQV06YEsCSnYuSf4aIq22CLcT9L4LLC4-1EnDoZBQFqGp73-tHM6HyzLliiNDmaGC-s3RwrrK0noFiE848YWC18XFMtRLNHWKpjLYvGNqvPw-47u1iK_aq35mor58X7La473B9VcLH8z24g9C2LCg-9ltYh4rSQmo47ZfHQiQEjMfdYqkAOcfkcHaSi20ga5QJHRFM8nsGGURinU-aMyDABwbEG5eWP_lTUiSXZcoc",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nqiIRb7z5GqjpGgrRFbrNCKg3KmoXZud7-0Be38bAu2KU0_kLTwSmX_yD0PRSEad3UItTHfU7zh0Aqe9Pqj6PJQt3Gzof72qyt75aJQz5_OQa_7bwUvLGz8Lw7STStpVfQtvFv7Yap3niiE=w223-h224-n-k-no-nu",
+    address: "R. de Ramalho Ortigão 28, 4000-407 Porto, Portugal",
   },
   {
     title: "Pastel de Nata at Manteigaria",
     description:
       "Famous Portuguese custard tarts with a flaky crust and creamy filling, dusted with cinnamon.",
     image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDifdI3chr3T0f7l9nIGGLGb9I5EGbUbETRQWCONES8dYarErl8Tx9oQ-0-KHW2gcbcIBU995x2PoGu0sRMYcr...",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4noO3j93lpJStWGbso0-ogtM3LKCKLsGmMoQOvWdp6ul2lQTfWc8zfS4RQLLcVfb-qNg4U-s2Vf644i1GVYfo-9580e165E2IMzBydUmA1oacExHCAbMyBleMjZslZqAXLQ00lc78g=w323-h420-p-k-no",
+    address: "Rua dos Clérigos nº37, 4050-205 Porto, Portugal",
   },
 ];
 

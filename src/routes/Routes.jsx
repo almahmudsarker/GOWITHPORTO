@@ -16,11 +16,11 @@
 // import Review from "../pages/dashboard/Review";
 // import PrivateRoute from "./PrivateRoute";
 import CreateTrip from "@/pages/create-trip/CreateTrip.jsx";
+import HomeGalilio from "@/pages/home/HomeGalilio.jsx";
 import TripDetails from "@/pages/trip-details/[tripId]/index.jsx";
 import { createBrowserRouter } from "react-router-dom";
 import ErrorPage from "../error-page.jsx";
 import Main from "../layouts/Main";
-import Home from "../pages/home/Home";
 
 export const router = createBrowserRouter([
   {
@@ -30,7 +30,8 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Home />,
+        // element: <Home />,
+        element: <HomeGalilio />,
       },
       {
         path: "/create-trip",
